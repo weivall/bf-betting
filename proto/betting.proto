@@ -1,0 +1,635 @@
+syntax = "proto3";
+
+import "google/protobuf/timestamp.proto";
+
+package betting;
+
+message MarketBook {
+    string marketId = 1;                            // The unique identifier for the market. MarketId's are prefixed with '1.' or '2.' 1. = UK Exchange 2. = AUS Exchange.
+    bool isMarketDataDelayed = 2;
+    MarketStatus status = 3;                        // The status of the market, for example ACTIVE, SUSPENDED, CLOSED (settled), etc.
+    int32 betDelay = 4;
+    bool bspReconciled = 5;                         // True if the market starting price has been reconciled
+    bool complete = 6;                              // If false, runners may be added to the market
+    bool inplay = 7;                                // True if the market is currently in play
+    int32 numberOfWinners = 8;                      // The number of selections that could be settled as winners
+    int32 numberOfRunners = 9;                      // The number of runners in the market
+    int32 numberOfActiveRunners = 10;               // The number of runners that are currently active. An active runner is a selection available for betting
+    google.protobuf.Timestamp lastMatchTime = 11;   // The most recent time an order was executed
+    double totalMatched = 12;                      // The total amount matched
+    double totalAvailable = 13;                    // The total amount of orders that remain unmatched
+    bool crossMatching = 14;                        // True if cross matching is enabled for this market.
+    bool runnersVoidable = 15;                      // True if runners in the market can be voided
+    int64 version = 16;
+    repeated Runner runners = 17;                   // Information about the runners (selections) in the market.
+
+    enum MarketStatus {
+        INACTIVE = 0;
+        OPEN = 1;
+        SUSPENDED = 2;
+        CLOSED = 3;
+    }
+}
+
+message UpdateInstructionReport {
+    ExecutionReport status = 1;         // whether the command succeeded or failed
+    ExecutionReport errorCode = 2;   // cause of failure, or null if command succeeds
+    UpdateInstruction instruction = 3;          // The instruction that was requested
+}
+
+message PriceProjection {
+    repeated PriceData priceData = 1; // The basic price data you want to receive in the response.
+    ExBestOffersOverrides exBestOffersOverrides = 2;
+    bool virtualise = 3;
+    bool rolloverStakes = 4;
+
+    enum PriceData {
+        SP_AVAILABLE = 0;
+        SP_TRADED = 1;
+        EX_BEST_OFFERS = 2;
+        EX_ALL_OFFERS = 3;
+        EX_TRADED = 4;
+    }
+}
+
+message VenueResult {
+    string venue = 1;       // Venue
+    int32 marketCount = 2;  // Count of markets associated with this Venue
+}
+
+message CancelInstruction {
+    string betId = 1;           // The betId
+    double sizeReduction = 2;  // If supplied then this is a partial cancel.  Should be set to 'null' if no size reduction is required.
+}
+
+message UpdateInstruction {
+    string betId = 1;                           // Unique identifier for the bet
+    PersistenceType newPersistenceType = 2;     // The new persistence message to update this bet to
+
+    enum PersistenceType {
+        LAPSE = 0;
+        PERSIST = 1;
+        MARKET_ON_CLOSE = 2;
+    }
+}
+
+message MarketFilter {
+    string textQuery = 1;
+    repeated int32 exchangeIds = 2;
+    repeated int32 eventTypeIds = 3;    // Restrict markets by event message associated with the market. (i.e., Football, Hockey, etc)
+    repeated int32 eventIds = 4;        // Restrict markets by the event id associated with the market.
+    repeated int32 competitionIds = 5;  // Restrict markets by the competitions associated with the market.
+    repeated int32 marketIds = 6;       // Restrict markets by the market id associated with the market.
+    repeated int32 venues = 7;
+    bool bspOnly = 8;
+    bool turnInPlayEnabled = 9;
+    bool inPlayOnly = 10;
+    repeated MarketBettingType marketBettingTypes = 11;
+    repeated int32 marketCountries = 12;          // Restrict to markets that are in the specified country or countries
+    repeated MarketType marketTypeCodes = 13;
+    TimeRange marketStartTime = 14;               // Restrict to markets with a market start time before or after the specified date
+    repeated OrderProjection withOrders = 15;         // Restrict to markets that I have one or more orders in these status.
+}
+
+message ClearedOrderSummaryReport {
+    repeated ClearedOrderSummary clearedOrders = 1;     // The list of cleared orders returned by your query. This will be a valid list (i.e. empty or non-empty but never 'null').
+    bool moreAvailable = 2;                             // Indicates whether there are further result items beyond this page. Note that underlying data is highly time-dependent and the subsequent search orders query might return an empty result.
+}
+
+message ItemDescription {
+    string eventTypeDesc = 1;                       // The event message name, translated into the requested locale. Available at EVENT_message groupBy or lower.
+    string eventDesc = 2;                           // The eventName, or openDate + venue, translated into the requested locale. Available at EVENT groupBy or lower.
+    string marketDesc = 3;
+    MarketType marketType = 4;
+    google.protobuf.Timestamp marketStartTime = 5;  // The start time of the market (in ISO-8601 format, not translated). Available at MARKET groupBy or lower.
+    string runnerDesc = 6;                          // The runner name, maybe including the handicap, translated into the requested locale. Available at BET groupBy.
+    int32 numberOfWinners = 7;                      // The numberOfWinners on a market. Available at BET groupBy.
+    double eachWayDivisor = 8;
+}
+
+message Match {
+    string betId = 1;                           // Only present if no rollup
+    string matchId = 2;                         // Only present if no rollup
+    Side side = 3;                              // Indicates if the bet is a Back or a LAY
+    double price = 4;                          // Either actual match price or avg match price depending on rollup.
+    double size = 5;                           // Size matched at in this fragment, or at this price or avg price depending on rollup
+    google.protobuf.Timestamp matchDate = 6;    // Only present if no rollup
+}
+
+message ExchangePrices {
+    repeated PriceSize availableToBack = 1;
+    repeated PriceSize availableToLay = 2;
+    repeated PriceSize tradedVolume = 3;
+}
+
+message PlaceExecutionReport {
+    string customerRef = 1;                     // Echo of the customerRef if passed.
+    ExecutionReport status = 2;
+    ExecutionReport errorCode = 3;
+    string marketId = 4;                        // Echo of marketId passed
+    repeated PlaceInstructionReport instructionReports = 5;
+}
+
+message CountryCodeResult {
+    string countryCode = 1;     // The ISO-2 code for the event.  A list of ISO-2 codes is available via http://en.wikipedia.org/wiki/ISO_3166-1_alpha-2
+    int32 marketCount = 2;      // Count of markets associated with this Country Code
+}
+
+message CompetitionResult {
+    Competition competition = 1;        // Competition
+    int32 marketCount = 2;              // Count of markets associated with this competition
+    string competitionRegion = 3;       // Region in which this competition is happening
+}
+
+message PlaceInstructionReport {
+    ExecutionReport status = 1;             // whether the command succeeded or failed
+    ExecutionReport errorCode = 2;       // cause of failure, or null if command succeeds
+    PlaceInstruction instruction = 3;               // The instruction that was requested
+    string betId = 4;                               // The bet ID of the new bet. May be null on failure.
+    google.protobuf.Timestamp placedDate = 5;       // The date on which the bet was placed
+    double averagePriceMatched = 6;                // The average price matched
+    double sizeMatched = 7;                        // The size matched.
+}
+
+message PlaceInstruction {
+    OrderType OrderType = 1;
+    int64 selectionId = 2;
+    double handicap = 3;                       // The handicap associated with the runner in case of Asian handicap markets, null otherwise.
+    Side side = 4;                              // Back or Lay
+    LimitOrder limitOrder = 5;                  // A simple exchange bet for immediate execution
+    LimitOnCloseOrder limitOnCloseOrder = 6;
+    MarketOnCloseOrder marketOnCloseOrder = 7;
+}
+
+message MarketCatalogue {
+    string marketId = 1;                                // The unique identifier for the market. MarketId's are prefixed with '1.' or '2.' 1. = UK Exchange 2. = AUS Exchange.
+    string marketName = 2;                              // The name of the market
+    google.protobuf.Timestamp marketStartTime = 3;      // The time this market starts at, only returned when the MARKET_START_TIME enum is passed in the marketProjections
+    MarketDescription description = 4;                  // Details about the market
+    double totalMatched = 5;                           // The total amount of money matched on the market
+    repeated RunnerCatalog runners = 6;                 // The runners (selections) contained in the market
+    EventType eventType = 7;                            // The Event message the market is contained within
+    Competition competition = 8;                        // The competition the market is contained within. Usually only applies to Football competitions
+    Event event = 9;                                    // The event the market is contained within
+}
+
+message MarketProfitAndLoss {
+    string marketId = 1;                                // The unique identifier for the market
+    double commissionApplied = 2;                      // The commission rate applied to P&L values. Only returned if netOfCommision option is requested
+    repeated RunnerProfitAndLoss profitAndLosses = 3;   // Calculated profit and loss data.
+}
+
+message EventType {
+    string id = 1;
+    string name = 2;
+}
+
+message CurrentOrderSummary {
+    string betId = 1;                                           // The bet ID of the original place order.
+    string marketId = 2;                                        // The market id the order is for.
+    int64 selectionId = 3;                                      // The selection id the order is for.
+    double handicap = 4;                                       // The handicap associated with the runner in case of Asian handicap markets, null otherwise.
+    PriceSize priceSize = 5;                                    // The price and size of the bet.
+    double bspLiability = 6;                                   // Not to be confused with size. This is the liability of a given BSP bet.
+    Side side = 7;                                              // BACK|LAY
+    OrderProjection status = 8;
+    PersistenceType persistenceType = 9;                     // What to do with the order at turn-in-play.
+    OrderType OrderType = 10;                                   // BSP Order type.
+    google.protobuf.Timestamp placedDate = 11;                  // The date, to the second, the bet was placed.
+    google.protobuf.Timestamp matchedDate = 12;                 // The date, to the second, of the last matched bet fragment (where applicable)
+    double averagePriceMatched = 13;
+    double sizeMatched = 14;                                   // The current amount of this bet that was matched.
+    double sizeRemaining = 15;                                 // The current amount of this bet that is unmatched.
+    double sizeLapsed = 16;                                    // The current amount of this bet that was lapsed.
+    double sizeCancelled = 17;                                 // The current amount of this bet that was cancelled.
+    double sizeVoided = 18;                                    // The current amount of this bet that was voided.
+    string regulatorAuthCode = 19;                              // The regulator authorisation code.
+    string regulatorCode = 20;                                  // The regulator Code.
+
+
+    enum PersistenceType {
+        LAPSE = 0;
+        PERSIST = 1;
+        MARKET_ON_CLOSE = 2;
+    }
+}
+
+message ExBestOffersOverrides {
+    int32 bestPricesDepth = 1;      // The maximum number of prices to return on each side for each runner. If unspecified defaults to 3.
+    RollupModel rollupModel = 2;
+    int32 rollupLimit = 3;
+    double rollupLiabilityThreshold = 4;
+    int32 rollupLiabilityFactor = 5;
+
+    enum RollupModel {
+        STAKE = 0;
+        PAYOUT = 1;
+        MANAGED_LIABILITY = 2;
+        NONE = 3;
+    }
+}
+
+message CurrentOrderSummaryReport {
+    repeated CurrentOrderSummary currentOrders = 1;     // The list of current orders returned by your query. This will be a valid list (i.e. empty or non-empty but never 'null').
+    bool moreAvailable = 3;                             // Indicates whether there are further result items beyond this page. Note that underlying data is highly time-dependent and the subsequent search orders query might return an empty result.
+}
+
+message MarketOnCloseOrder {
+    double liability = 1;  // The size of the bet.
+}
+
+message ReplaceExecutionReport {
+    string customerRef = 1;                             // Echo of the customerRef if passed.
+    ExecutionReport status = 2;
+    ExecutionReport errorCode = 3;
+    string marketId = 4;                                // Echo of marketId passed
+    repeated ReplaceInstructionReport instructionReports = 5;
+}
+
+message EventResult {
+    Event event = 1;            // Event
+    int32 marketCount = 2;      // Count of markets associated with this event
+}
+
+message UpdateExecutionReport {
+    string customerRef = 1;                     // Echo of the customerRef if passed.
+    ExecutionReport status = 2;
+    ExecutionReport errorCode = 3;
+    string marketId = 4;                        // Echo of marketId passed
+    repeated UpdateInstructionReport instructionReports = 5;
+}
+
+message MarketDescription {
+    bool persistenceEnabled = 1;                      // If 'true' the market supports 'Keep' bets if the market is to be turned in-play
+    bool bspMarket = 2;                               // If 'true' the market supports Betfair SP betting
+    google.protobuf.Timestamp marketTime = 3;         // The market start time
+    google.protobuf.Timestamp suspendTime = 4;        // The market suspend time
+    google.protobuf.Timestamp settleTime = 5;         // settled time
+    MarketBettingType bettingType = 6;                // See MarketBettingType
+    bool turnInPlayEnabled = 7;                       // If 'true' the market is set to turn in-play
+    string marketType = 8;                         // Market base type
+    string regulator = 9;                             // The market regulator
+    double marketBaseRate = 10;                      // The commission rate applicable to the market
+    bool discountAllowed = 11;                        // Indicates whether or not the user's discount rate is taken into account on this market. If ‘false’ all users will be charged the same commission rate, regardless of discount rate.
+    string wallet = 12;                               // The wallet to which the market belongs (UK/AUS)
+    string rules = 13;                                // The market rules.
+    bool rulesHasDate = 14;              //
+    string clarifications = 15;            // Any additional information regarding the market
+}
+
+message TimeRangeResult {
+    TimeRange timeRange = 1; // TimeRange
+    int32 marketCount = 2;     // Count of markets associated with this TimeRange
+}
+
+message RunnerProfitAndLoss {
+    string selectionId = 1;  // The unique identifier for the selection
+    double ifWin = 2; // Profit or loss for the market if this selection is the winner.
+    double ifLose = 3; // Profit or loss for the market if this selection is the loser. Only returned for multi-winner odds markets.
+    double ifPlace = 4; // Profit or loss for the market if this selection is placed. Applies to marketmessage EACH_WAY only.
+}
+
+message LimitOnCloseOrder {
+    double liability = 1; // The size of the bet.
+    double price = 2; // The limit price of the bet if LOC
+}
+
+message CancelExecutionReport {
+    string customerRef = 1;                    // Echo of the customerRef if passed.
+    ExecutionReport status = 2;     //
+    ExecutionReport errorCode = 3;  //
+    string marketId = 4;                    // Echo of marketId passed
+    repeated CancelInstructionReport instructionReports = 5; //
+}
+
+message MarketRates {
+    double marketBaseRate = 1; // marketBaseRate
+    bool discountAllowed = 2;    // discountAllowed
+}
+
+message RunnerCatalog {
+    int64 selectionId = 1;             // The unique id for the selection.
+    string runnerName = 2;            // The name of the runner
+    double handicap = 3;           // The handicap
+    int32 sortPriority = 4;             // The sort priority of this runner
+    map<string, string> metadata = 5; // Metadata associated with the runner.  For a description of this data for Horse Racing, please see Runner Metadata Description
+}
+
+message LimitOrder {
+    double size = 1;         // The size of the bet. Please note: For market message EACH_WAY. The total stake = size x 2
+    double price = 2;         // The limit price
+    PersistenceType persistenceType = 3; // What to do with the order at turn-in-play
+
+    enum PersistenceType {
+        LAPSE = 0;
+        PERSIST = 1;
+        MARKET_ON_CLOSE = 2;
+    }
+}
+
+message CancelInstructionReport {
+    ExecutionReport status = 1;    // whether the command succeeded or failed
+    ExecutionReport errorCode = 2; // cause of failure, or null if command succeeds
+    CancelInstruction instruction = 3;          // The instruction that was requested
+    double sizeCancelled = 4;                    //
+    google.protobuf.Timestamp cancelledDate = 5;                  //
+}
+
+message PriceSize {
+    double price = 1; // The price available
+    double size = 2; // The stake available
+}
+
+message StartingPrices {
+    double nearPrice = 1;     // What the starting price would be if the market was reconciled now taking into account the SP bets as well as unmatched exchange bets on the same selection in the exchange. - Please note: message Double may contain numbers, INF, -INF, and NaN.
+    double farPrice = 2;     // What the starting price would be if the market was reconciled now taking into account only the currently place SP bets. The Far Price is not as complicated but not as accurate and only accounts for money on the exchange at SP. - Please note: message Double may contain numbers, INF, -INF, and NaN.
+    repeated PriceSize backStakeTaken = 3; // The back bets matched at the actual Betfair Starting Price
+    repeated PriceSize layLiabilityTaken = 4; // The lay amount matched at the actual Betfair Starting Price
+    double actualSP = 5;     // The final BSP price for this runner. Only available for a BSP market that has been reconciled.
+}
+
+message MarketTypeResult {
+    string marketType = 1; // Market Type
+    int32 marketCount = 2;  // Count of markets associated with this marketType
+}
+
+message MarketLicence {
+    string wallet = 1; // The wallet from which funds will be taken when betting on this market
+    string rules = 2; // The rules for this market
+    bool rulesHasDate = 3;   // The market's start date and time are relevant to the rules.
+    string clarifications = 4; // Clarifications to the rules for the market
+}
+
+message ClearedOrderSummary {
+    string eventTypeId = 1;    // The id of the event message bet on. Available at EVENT_message groupBy level or lower.
+    string eventId = 2;    // The id of the event bet on. Available at EVENT groupBy level or lower.
+    string marketId = 3;    // The id of the market bet on. Available at MARKET groupBy level or lower.
+    string selectionId = 4;    // The id of the selection bet on. Available at RUNNER groupBy level or lower.
+    double handicap = 5;   // The id of the market bet on. Available at MARKET groupBy level or lower.
+    string betId = 6;    // The id of the bet. Available at BET groupBy level.
+    google.protobuf.Timestamp placedDate = 7; // The date the bet order was placed by the customer. Only available at BET groupBy level.
+    PersistenceType persistenceType = 8;
+    OrderType orderType = 9;
+    Side side = 10;            // Whether the bet was a back or lay bet. Available at SIDE groupBy level or lower.
+    ItemDescription itemDescription = 11; // A container for all the ancillary data and localised text valid for this Item
+    double priceRequested = 12;
+    google.protobuf.Timestamp settledDate = 13; // The date and time the bet order was settled by Betfair. Available at SIDE groupBy level or lower.
+    int32 betCount = 14;     // The number of actual bets within this grouping (will be 1 for BET groupBy)
+    double commission = 15;
+    double priceMatched = 16;
+    bool priceReduced = 17;
+    double sizeSettled = 18;
+    double profit = 19; // The profit or loss (negative profit) gained on this line, in the account currency
+    double sizeCancelled = 20;
+
+    enum PersistenceType {
+        LAPSE = 0;
+        PERSIST = 1;
+        MARKET_ON_CLOSE = 2;
+    }
+}
+
+message Event {
+    string id = 1; // The unique id for the event
+    string name = 2; // The name of the event
+    string countryCode = 3;
+    string timezone = 4;    // This is timezone in which the event is taking place.
+    string venue = 5;    // venue
+    google.protobuf.Timestamp openDate = 6; // The scheduled start date and time of the event. This is Europe/London (GMT) by default
+}
+
+message Order {
+    string betId = 1;          //
+    OrderType OrderType = 2;       // BSP Order type.
+    OrderProjection status = 3;     // Either EXECUTABLE (an unmatched amount remains) or EXECUTION_COMPLETE (no unmatched amount remains).
+    PersistenceType persistenceType = 4; // What to do with the order at turn-in-play
+    Side side = 5;            // Indicates if the bet is a Back or a LAY
+    double price = 6;         // The price of the bet.
+    double size = 7;         // The size of the bet.
+    double bspLiability = 8;         // Not to be confused with size. This is the liability of a given BSP bet.
+    google.protobuf.Timestamp placedDate = 9;       // The date, to the second, the bet was placed.
+    double avgPriceMatched = 10;
+    double sizeMatched = 11; // The current amount of this bet that was matched.
+    double sizeRemaining = 12; // The current amount of this bet that is unmatched.
+    double sizeLapsed = 13; // The current amount of this bet that was lapsed.
+    double sizeCancelled = 14; // The current amount of this bet that was cancelled.
+    double sizeVoided = 15; // The current amount of this bet that was voided.
+
+    enum PersistenceType {
+        LAPSE = 0;
+        PERSIST = 1;
+        MARKET_ON_CLOSE = 2;
+    }
+}
+
+message TimeRange {
+    google.protobuf.Timestamp from = 1; // from
+    google.protobuf.Timestamp to = 2; // to
+}
+
+message MarketLineRangeInfo {
+    double maxUnitValue = 1; // maxPrice
+    double minUnitValue = 2; // minPrice
+    double interval = 3; // interval
+    string marketUnit = 4;  // unit
+}
+
+message ReplaceInstructionReport {
+    ExecutionReport status = 1;    // whether the command succeeded or failed
+    ExecutionReport errorCode = 2; // cause of failure, or null if command succeeds
+    CancelInstructionReport cancelInstructionReport = 3;    // Cancelation report for the original order
+    PlaceInstructionReport placeInstructionReport = 4;     // Placement report for the new order
+}
+
+message EventTypeResult {
+    EventType eventType = 1; // The ID identifying the Event Type
+    int32 marketCount = 2;     // Count of markets associated with this eventType
+}
+
+message RunnerId {
+    string marketId = 1;  // The id of the market bet on
+    string selectionId = 2;  // The id of the selection bet on
+    double handicap = 3; // The handicap associated with the runner in case of asian handicap markets, null otherwise.
+}
+
+message Runner {
+    int64 selectionId = 1;          // The unique id of the runner (selection)
+    double handicap = 2;        // The handicap.  Enter the specific handicap value (returned by RUNNER in listMaketBook) if the market is an Asian handicap market.
+    RunnerStatus status = 3;   // The status of the selection (i.e., ACTIVE, REMOVED, WINNER, LOSER, HIDDEN) Runner status information is available for 90 days following market settlement.
+    double adjustmentFactor = 4;        // The adjustment factor applied if the selection is removed
+    double lastPriceTraded = 5;        // The price of the most recent bet matched on this selection
+    double totalMatched = 6;        // The total amount matched on this runner
+    google.protobuf.Timestamp removalDate = 7;      // If date and time the runner was removed
+    StartingPrices sp = 8; // The BSP related prices for this runner
+    ExchangePrices ex = 9; // The Exchange prices available for this runner
+    repeated Order orders = 10;        // List of orders in the market
+    repeated Match matches = 11;        // List of matches (i.e, orders that have been fully or partially executed)
+
+    enum RunnerStatus {
+        ACTIVE = 0;
+        WINNER = 1;
+        LOSER = 2;
+        REMOVED_VACANT = 3;
+        REMOVED = 4;
+        HIDDEN = 5;
+    }
+}
+
+message Competition {
+    string id = 1;
+    string name = 2;
+}
+
+message ReplaceInstruction {
+    string betId = 1;  // Unique identifier for the bet
+    double newPrice = 2; // The price to replace the bet at
+}
+
+enum MarketBettingType {
+    ODDS = 0;
+    LINE = 1;
+    RANGE = 2;
+    ASIAN_HANDICAP_DOUBLE_LINE = 3;
+    ASIAN_HANDICAP_SINGLE_LINE = 4;
+    FIXED_ODDS = 5;
+}
+
+enum Exception {
+    TOO_MUCH_DATA = 0;
+    INVALID_INPUT_DATA = 1;
+    INVALID_SESSION_INFORMATION = 2;
+    NO_APP_KEY = 3;
+    NO_SESSION = 4;
+    UNEXPECTED_ERROR = 5;
+    INVALID_APP_KEY = 6;
+    TOO_MANY_REQUESTS = 7;
+    SERVICE_BUSY = 8;
+    TIMEOUT_ERROR = 9;
+    REQUEST_SIZE_EXCEEDS_LIMIT = 10;
+    ACCESS_DENIED = 11;
+}
+
+enum BetStatus {
+    SETTLED = 0;
+    VOIDED = 1;
+    LAPSED = 2;
+    CANCELLED = 3;
+}
+
+enum Side {
+    BACK = 0;
+    LAY = 1;
+}
+
+enum SortDir {
+    EARLIEST_TO_LATEST = 0;
+    LATEST_TO_EARLIEST = 1;
+}
+
+enum MarketType {
+    MATCH_ODDS = 0;
+    NEXT_GOAL = 1;
+    ET_CORRECT_SCORE = 2;
+    ET_NEXT_GOAL = 3;
+    TO_QUALIFY = 4;
+    HALF_TIME_SCORE = 5;
+    HALF_TIME_FULL_TIME = 6;
+    HALF_TIME = 7;
+    EXTRA_TIME = 8;
+    OVER_UNDER_05 = 9;
+    OVER_UNDER_15 = 10;
+    OVER_UNDER_25 = 11;
+    OVER_UNDER_35 = 12;
+    OVER_UNDER_45 = 13;
+    OVER_UNDER_55 = 14;
+    OVER_UNDER_65 = 15;
+    OVER_UNDER_75 = 16;
+    OVER_UNDER_85 = 17;
+}
+
+enum ExecutionReport {
+    SERVICE_UNAVAILABLE = 0;
+    BET_ACTION_ERROR = 1;
+    BET_IN_PROGRESS = 2;
+    BET_TAKEN_OR_LAPSED = 3;
+    CANCELLED_NOT_PLACED = 4;
+    DUPLICATE_BETIDS = 5;
+    DUPLICATE_TRANSACTION = 6;
+    ERROR_IN_ORDER = 7;
+    INVALID_ACCOUNT_STATE = 8;
+    INVALID_BACK_LAY_COMBINATION = 9;
+    INVALID_BET_ID = 10;
+    INVALID_BET_SIZE = 11;
+    INVALID_BID_TYPE = 12;
+    INVALID_MARKET_ID = 13;
+    INVALID_ODDS = 14;
+    INVALID_ORDER = 15;
+    INVALID_PERSISTENCE_TYPE = 16;
+    INVALID_PRICE_EDIT = 17;
+    INVALID_RUNNER = 18;
+    INVALID_WALLET_STATUS = 19;
+    MARKET_NOT_OPEN_FOR_BSP_BETTING = 20;
+    MARKET_SUSPENDED = 21;
+    PERMISSION_DENIED = 22;
+    PROCESSED_WITH_ERRORS = 23;
+    REJECTED_BY_REGULATOR = 24;
+    RELATED_ACTION_FAILED = 25;
+    RUNNER_REMOVED = 26;
+    SUCCESS = 27;
+    FAILURE = 28;
+    TIMEOUT = 29;
+}
+
+enum OrderType {
+    LIMIT = 0;
+    MARKET_ON_CLOSE = 1;
+    LIMIT_ON_CLOSE = 2;
+}
+
+//enum GroupBy {
+//    EVENT_TYPE = 0;
+//    EVENT = 1;
+//    MARKET = 2;
+//    SIDE = 3;
+//    BET = 4;
+//}
+
+enum OrderProjection {
+    ALL = 0;
+    EXECUTABLE = 1;
+    EXECUTION_COMPLETE = 2;
+}
+
+enum OrderBy {
+    BY_BET = 0;
+    BY_MARKET = 1;
+    BY_MATCH_TIME = 2;
+    BY_PLACE_TIME = 3;
+    BY_SETTLED_TIME = 4;
+    BY_VOID_TIME = 5;
+}
+
+enum MarketSort {
+    MINIMUM_TRADED = 0;
+    MAXIMUM_TRADED = 1;
+    MINIMUM_AVAILABLE = 2;
+    MAXIMUM_AVAILABLE = 3;
+    FIRST_TO_START = 4;
+    LAST_TO_START = 5;
+}
+
+enum MarketProjection {
+    COMPETITION = 0;
+    EVENT = 1;
+    EVENT_TYPE = 2;
+    MARKET_START_TIME = 3;
+    MARKET_DESCRIPTION = 4;
+    RUNNER_DESCRIPTION = 5;
+    RUNNER_METADATA = 6;
+}
+
+enum MatchProjection {
+    NO_ROLLUP = 0;
+    ROLLED_UP_BY_PRICE = 1;
+    ROLLED_UP_BY_AVG_PRICE = 2;
+}
