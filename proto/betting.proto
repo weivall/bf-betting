@@ -633,3 +633,9 @@ enum MatchProjection {
     ROLLED_UP_BY_PRICE = 1;
     ROLLED_UP_BY_AVG_PRICE = 2;
 }
+
+enum TimeGranularity {
+    DAYS = 0;
+    HOURS = 1;
+    MINUTES = 2;
+}
