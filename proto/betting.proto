@@ -485,6 +485,15 @@ message ReplaceInstruction {
     double newPrice = 2; // The price to replace the bet at
 }
 
+message RequestBody {
+    MarketFilter filter = 1;
+    string locale = 2;
+    repeated MarketProjection marketProjection = 3;
+    MarketSort sort = 4;
+    int32 maxResults = 5;
+    TimeGranularity granularity = 6;
+}
+
 enum MarketBettingType {
     ODDS = 0;
     LINE = 1;
