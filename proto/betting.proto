@@ -349,7 +349,7 @@ message StartingPrices {
 }
 
 message MarketTypeResult {
-    string marketType = 1; // Market Type
+    MarketType marketType = 1; // Market Type
     int32 marketCount = 2;  // Count of markets associated with this marketType
 }
 
@@ -536,24 +536,66 @@ enum SortDir {
 }
 
 enum MarketType {
-    MATCH_ODDS = 0;
-    NEXT_GOAL = 1;
-    ET_CORRECT_SCORE = 2;
-    ET_NEXT_GOAL = 3;
-    TO_QUALIFY = 4;
-    HALF_TIME_SCORE = 5;
-    HALF_TIME_FULL_TIME = 6;
-    HALF_TIME = 7;
-    EXTRA_TIME = 8;
-    OVER_UNDER_05 = 9;
-    OVER_UNDER_15 = 10;
-    OVER_UNDER_25 = 11;
-    OVER_UNDER_35 = 12;
-    OVER_UNDER_45 = 13;
-    OVER_UNDER_55 = 14;
-    OVER_UNDER_65 = 15;
-    OVER_UNDER_75 = 16;
-    OVER_UNDER_85 = 17;
+    UNUSED = 0;
+    WINNER = 1;
+    SPECIALS_NEXT_MGR = 2;
+    SEASON_SPECIALS = 3;
+    GRAND_SLAM_SPECIALS = 4;
+    UNDIFFERENTIATED = 5;
+    TOP_N_FINISH = 6;
+    TOURNAMENT_WINNER = 7;
+    TOP_WICKETS_TAKER = 8;
+    TOP_BATSMAN = 9;
+    HOLE_IN_ONE = 10;
+    TWO_BALLS = 11;
+    OVER_UNDER_05 = 12;
+    OVER_UNDER_15 = 13;
+    OVER_UNDER_25 = 14;
+    OVER_UNDER_35 = 15;
+    MATCH_ODDS = 16;
+    CORRECT_SCORE = 17;
+    BOTH_TEAMS_TO_SCORE = 18;
+    OVER_UNDER_45 = 19;
+    BOOKING_ODDS = 20;
+    CORNER_ODDS = 21;
+    PENALTY_TAKEN = 22;
+    ANYTIME_SCORE = 23;
+    TEAM_B_1 = 24;
+    OVER_UNDER_85 = 25;
+    NEXT_GOAL = 26;
+    FIRST_HALF_GOALS_15 = 27;
+    FIRST_HALF_GOALS_05 = 28;
+    OVER_UNDER_55 = 29;
+    HALF_TIME = 30;
+    OVER_UNDER_65 = 31;
+    HALF_TIME_FULL_TIME = 32;
+    HALF_TIME_SCORE = 33;
+    OVER_UNDER_75 = 34;
+    DRAW_NO_BET = 35;
+    TEAM_A_1 = 36;
+    DOUBLE_CHANCE = 37;
+    FIRST_HALF_GOALS_25 = 38;
+    ASIAN_HANDICAP = 39;
+    FORECAST = 40;
+    CORRECT_SCORE2 = 41;
+    FIRST_GOAL_ODDS = 42;
+    ODD_OR_EVEN = 43;
+    TEAM_B_2 = 44;
+    TEAM_A_2 = 45;
+    CLEAN_SHEET = 46;
+    TEAM_A_3 = 47;
+    TEAM_B_3 = 48;
+    TEAM_A_WIN_TO_NIL = 49;
+    TEAM_B_WIN_TO_NIL = 50;
+    WIN_BOTH_HALVES = 51;
+    TOTAL_GOALS = 52;
+    MATCH_ODDS_UNMANAGED = 53;
+    TO_WIN_THE_TOSS = 54;
+    ANTEPOST_WIN = 55;
+    HAT_TRICKED_SCORED = 56;
+    OUTRIGHT_WINNER = 57;
+    MAKE_THE_CUT = 58;
+    SPECIAL = 59;
 }
 
 enum ExecutionReport {
