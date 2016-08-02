@@ -494,6 +494,15 @@ message RequestBody {
     TimeGranularity granularity = 6;
 }
 
+message ListMarketBookRequest {
+    repeated string marketIds = 1;
+    PriceProjection priceProjection = 2;
+    OrderProjection orderProjection = 3;
+    MatchProjection matchProjection = 4;
+    CurrencyCode currencyCode = 5;
+    string locale = 6;
+}
+
 enum MarketBettingType {
     ODDS = 0;
     LINE = 1;
@@ -689,4 +698,17 @@ enum TimeGranularity {
     DAYS = 0;
     HOURS = 1;
     MINUTES = 2;
+}
+
+enum CurrencyCode {
+    AUD = 0; // Australian Dollar
+    CAD = 1; // Canadian Dollar
+    DKK = 2; // Danish Kroner
+    EUR = 3;
+    USD = 4;
+    HKD = 5; // Hong Kong Dollars
+    NOK = 6; // Norwegian Kronor
+    SGD = 7; // Singapore Dollar
+    SEK = 8; // Swedish Krona
+    GBP = 9; // UK Sterling
 }
