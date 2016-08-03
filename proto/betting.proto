@@ -510,6 +510,17 @@ message ListMarketProfitAndLossRequest {
     bool netOfCommission = 4;
 }
 
+message ListCurrentOrdersRequest {
+    repeated string betIds = 1;
+    repeated string marketIds = 2;
+    OrderProjection orderProjection = 3;
+    TimeRange placedDateRange = 4;
+    OrderBy orderBy = 5;
+    SortDir sortDir = 6;
+    int32 fromRecord = 7;
+    int32 recordCount = 8;
+}
+
 enum MarketBettingType {
     ODDS = 0;
     LINE = 1;
