@@ -521,6 +521,30 @@ message ListCurrentOrdersRequest {
     int32 recordCount = 8;
 }
 
+message ListClearedOrdersRequest {
+    BetStatus betStatus = 1;
+    repeated string eventTypeIds = 2;
+    repeated uint32 eventIds = 3;
+    repeated string marketIds = 4;
+    RunnerId runnerIds = 5;
+    repeated string betIds = 6;
+    Side side = 7;
+    TimeRange settledDateRange = 8;
+    GroupBy groupBy = 9;
+    bool includeItemDescription = 10;
+    string locale = 11;
+    uint32 fromRecord = 12;
+    uint32 recordCount = 13;
+
+    enum GroupBy {
+        EVENT_TYPE = 0;
+        EVENT = 1;
+        MARKET = 2;
+        SIDE = 3;
+        BET = 4;
+    }
+}
+
 enum MarketBettingType {
     ODDS = 0;
     LINE = 1;
@@ -663,14 +687,6 @@ enum OrderType {
     MARKET_ON_CLOSE = 1;
     LIMIT_ON_CLOSE = 2;
 }
-
-//enum GroupBy {
-//    EVENT_TYPE = 0;
-//    EVENT = 1;
-//    MARKET = 2;
-//    SIDE = 3;
-//    BET = 4;
-//}
 
 enum OrderProjection {
     ALL = 0;
