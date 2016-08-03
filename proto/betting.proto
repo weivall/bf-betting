@@ -503,6 +503,13 @@ message ListMarketBookRequest {
     string locale = 6;
 }
 
+message ListMarketProfitAndLossRequest {
+    repeated string marketIds = 1;
+    bool includeSettledBets = 2;
+    bool includeBspBets = 3;
+    bool netOfCommission = 4;
+}
+
 enum MarketBettingType {
     ODDS = 0;
     LINE = 1;
